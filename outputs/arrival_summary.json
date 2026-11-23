@@ -1,0 +1,14 @@
+{
+  "strategy": "arrival-first",
+  "berths": 4,
+  "cranes": 8,
+  "total": 180,
+  "scheduled": 84,
+  "unscheduled": 96,
+  "containers_served": 41292,
+  "average_wait_hours": 39.547619,
+  "average_turnaround_hours": 45.761905,
+  "makespan_hours": 140,
+  "berth_utilization": 0.932143,
+  "crane_utilization": 0.943750
+}

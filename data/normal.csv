@@ -1,0 +1,12 @@
+#berths=3
+#cranes=6
+id,name,arrival,duration,cranes,priority,containers,deadline
+101,Pacific-Star,0,5,2,4,420,15
+102,Ocean-Breeze,1,4,1,3,280,12
+103,Sea-Bridge,2,6,2,5,610,17
+104,Coral-Queen,3,3,1,2,190,14
+105,Blue-Horizon,6,5,2,4,500,20
+106,Maritime-One,8,2,1,1,120,15
+107,Coastal-Swift,9,4,2,3,370,22
+108,Tide-Carrier,11,3,1,2,210,24
+109,Port-Link,12,3,1,3,275,26

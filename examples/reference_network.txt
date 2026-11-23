@@ -1,0 +1,7 @@
+Available network nodes: Gate, Yard, Rail, Berth-A, Berth-B, Crane-Depot
+
+Terminal network: 6 nodes
+Shortest Gate -> Berth-B: 9 minutes (Dijkstra = Bellman-Ford)
+Kruskal MST: 14 (sum of undirected minimum-link minute weights)
+Edmonds-Karp max flow Gate -> Berth-B: 11 capacity units/interval
+Note: MST is an undirected infrastructure proxy; network routes/flow are directed.

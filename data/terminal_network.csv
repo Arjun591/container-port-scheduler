@@ -1,0 +1,12 @@
+source,destination,minutes,capacity
+Gate,Yard,4,10
+Gate,Rail,7,5
+Yard,Berth-A,3,5
+Yard,Berth-B,5,4
+Yard,Crane-Depot,2,3
+Rail,Yard,2,4
+Rail,Berth-B,4,3
+Crane-Depot,Berth-A,4,3
+Crane-Depot,Berth-B,3,2
+Berth-A,Berth-B,6,2
+Berth-B,Gate,8,2

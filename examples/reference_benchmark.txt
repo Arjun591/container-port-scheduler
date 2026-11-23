@@ -1,0 +1,10 @@
+
+=== VERIFIED SCHEDULER BENCHMARK ===
+Dataset             Strategy    Served   AvgWait   Makespan  CPU time/run
+Normal              Arrival       9/9       0.22         15        0.001 ms
+Normal              Priority      9/9       0.22         15        0.001 ms
+Capacity shock      Arrival       7/12      3.00         18        0.002 ms
+Capacity shock      Priority      5/12      2.40         19        0.002 ms
+Stress (180)        Arrival      84/180    39.55        140        1.364 ms
+Stress (180)        Priority     77/180    20.27        128        1.163 ms
+CPU times depend on the device; these are NOT end-to-end wall-clock timings.

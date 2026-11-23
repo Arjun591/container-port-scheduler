@@ -1,0 +1,5 @@
+#berths=1
+#cranes=2
+id,name,arrival,duration,cranes,priority,containers,deadline
+401,Titan-Runner,0,5,2,5,500,5
+402,Sea-Queen,0,5,2,5,450,5
