@@ -1,39 +1,101 @@
-# Container Port Berth & Crane Scheduling Suite — focused DAA edition
+# Container Port Berth & Crane Scheduling Suite
 
-**Language:** ISO C11 • **Entry point:** `src/main.c` • **Main executable:** `main.exe` on Windows, `main` on Linux/macOS • **Algorithms:** exactly ten clearly identified DAA components.
+A C-based maritime logistics simulation for vessel scheduling, berth allocation, crane resource management, and terminal network analysis.
 
-This edition deliberately focuses on **real time-based berth scheduling** rather than packing the entire DAA syllabus into a demonstration. It includes the earlier **normal (9 ships)**, **capacity-shock (12 ships)** and **stress (180 ships)** scenarios, plus an adversarial scenario, a terminal graph and a complete interactive fleet editor.
+The application provides an interactive fleet management interface, compares two greedy scheduling strategies, and includes algorithmic tools for resource planning and network optimization.
 
-## First: run it in VS Code / PowerShell (Windows)
+**Language:** C (ISO C11)  
+**Build Systems:** GCC, CMake, Make  
+**Platform:** Windows, Linux, macOS  
+**Entry Point:** `src/main.c`
 
-1. Extract the ZIP. Open **the folder that contains `CMakeLists.txt` and `data/`** in VS Code.
-2. Open **Terminal → New Terminal**. If `PS ...\src>` is displayed, go back to the project root using `cd ..`.
-3. Confirm that `gcc --version` displays a compiler version (MinGW-w64 GCC is recommended).
-4. Paste the following into the root terminal:
+## Key Features
 
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File .\scripts\build_windows.ps1
-   ```
+- **Vessel Management:** Add, edit, delete, search, import, and export vessel records.
+- **Berth Scheduling:** Generate vessel timetables using arrival-first and priority-first greedy strategies.
+- **Crane Allocation:** Account for shared crane availability and individual vessel requirements.
+- **Resource Planning:** Estimate berth requirements and select vessel workloads within crane-hour budgets.
+- **Terminal Network Analysis:** Calculate shortest paths, spanning trees, and maximum network flow.
+- **Performance Evaluation:** Compare scheduling strategies across normal, capacity-shock, stress, and adversarial datasets.
+- **Reporting:** Export vessel schedules in CSV format and aggregate performance metrics in JSON.
 
-5. Run the single compiled application:
+## Algorithms Implemented
 
-   ```powershell
-   .\main.exe --menu
-   ```
+| Algorithm | Application |
+|---|---|
+| Arrival-First Greedy Scheduling | Assigns vessels according to arrival order |
+| Priority-First Greedy Scheduling | Prioritizes vessels when generating feasible schedules |
+| Merge Sort | Sorts vessel indices for scheduling |
+| Binary Search | Locates vessels through a sorted ID index |
+| Interval Partitioning | Estimates berth requirements for fixed service intervals |
+| 0/1 Knapsack (Dynamic Programming) | Selects vessel workloads under a crane-hour budget |
+| Dijkstra's Algorithm | Computes shortest paths in a nonnegative terminal network |
+| Bellman–Ford Algorithm | Provides an independent shortest-path comparison |
+| Kruskal's Algorithm | Constructs a minimum spanning tree using an undirected network representation |
+| Edmonds–Karp Algorithm | Computes maximum flow through a directed terminal network |
 
-6. Other useful commands:
+The berth scheduling engine uses greedy scheduling and merge sort. The remaining algorithms support fleet lookup, resource planning, and terminal network analysis.
 
-   ```powershell
-   .\main.exe --demo
-   .\main.exe --benchmark
-   .\main.exe --network
-   .\main.exe --run data\normal.csv
-   .\port_tests.exe
-   ```
+## Scheduling Model
 
-**Important:** The entire application starts from `src/main.c`, but `main.c` alone cannot be compiled without the other `.c` files. The build script compiles and links all modules together into **one** executable. Run it from the **project root** so it finds `data/`.
+Each vessel is represented using the following attributes:
 
-**Alternative CMake/MinGW build:**
+`id`, `name`, `arrival`, `duration`, `cranes`, `priority`, `containers`, and `deadline`.
+
+The scheduling engine enforces these constraints:
+
+- Each vessel occupies one berth throughout its service interval.
+- A vessel receives its requested number of cranes throughout its service interval.
+- Total simultaneous berth and crane allocations cannot exceed available capacity.
+- Service cannot begin before a vessel arrives.
+- Deadlines must be respected when specified.
+- Service is non-preemptive.
+
+All scheduling times are represented as integer hours.
+
+Both scheduling approaches are heuristics designed to generate feasible allocations. They do not guarantee globally optimal schedules.
+
+## Installation and Execution
+
+### Requirements
+
+- GCC compiler with C11 support
+- PowerShell for the Windows build script, or CMake/Make for alternative builds
+
+### Windows — PowerShell
+
+Clone the repository:
+
+```powershell
+git clone https://github.com/Arjun591/container-port-scheduler.git
+cd container-port-scheduler
+```
+
+Build the application:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build_windows.ps1
+```
+
+Launch the interactive menu:
+
+```powershell
+.\main.exe --menu
+```
+
+Additional commands:
+
+```powershell
+.\main.exe --demo
+.\main.exe --benchmark
+.\main.exe --network
+.\main.exe --run data\normal.csv
+.\port_tests.exe
+```
+
+Run these commands from the project root so the application can locate its datasets.
+
+### Alternative CMake Build
 
 ```powershell
 cmake -S . -B build -G "MinGW Makefiles"
@@ -42,65 +104,50 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-The CMake generator requires `mingw32-make`. If only GCC is installed, use the PowerShell build script instead. Visual Studio generators may create `build\Debug\main.exe`.
+The MinGW generator requires `mingw32-make`.
 
-## Linux / macOS build
+### Linux / macOS
 
 ```bash
-sh scripts/run_all.sh           # build + tests + demo + network + benchmark
-./main --menu                   # interactive menu
-# Or: cmake -S . -B build && cmake --build build
-# Then: ./build/main --menu
+sh scripts/run_all.sh
+./main --menu
 ```
 
-## What the menu does
+Alternatively:
 
-| Option | Meaning |
+```bash
+cmake -S . -B build
+cmake --build build
+./build/main --menu
+```
+
+## Interactive Application
+
+The command-line interface supports the following operations:
+
+| Option | Operation |
 |---|---|
-| 1 | List all vessels, number of berths, number of cranes |
-| 2 | Load normal / capacity shock / stress / adversarial / custom CSV |
-| 3 | Add a ship interactively (validated) |
-| 4 | Edit an existing ship, including ID |
-| 5 | Delete ship by ID |
-| 6 | Change 1–16 berths or 1–64 cranes (rejects incompatible vessel demand) |
-| 7 | Save current ship list and port capacity as a CSV |
-| 8 | Find ship by ID using a sorted index + binary search |
-| 9 | Create an actual berth timetable using arrival-first greedy |
-| 10 | Create an actual berth timetable using priority-first greedy |
-| 11 | Compare both scheduling strategies and export CSV/JSON |
-| 12 | Resource planning: fixed-interval berth requirement or 0/1 knapsack |
-| 13 | Terminal graph: Dijkstra, Bellman–Ford, Kruskal, Edmonds–Karp |
-| 14 | Benchmark normal, capacity shock, stress |
+| 1 | View vessel and port information |
+| 2 | Load predefined or custom datasets |
+| 3 | Add a vessel |
+| 4 | Modify vessel information |
+| 5 | Delete a vessel |
+| 6 | Configure berth and crane capacity |
+| 7 | Export fleet data |
+| 8 | Search vessels by ID |
+| 9 | Generate an arrival-first schedule |
+| 10 | Generate a priority-first schedule |
+| 11 | Compare scheduling strategies and export results |
+| 12 | Perform resource planning |
+| 13 | Analyze the terminal network |
+| 14 | Run performance benchmarks |
 | 0 | Exit |
 
-## The exactly ten algorithmic components
+## Input Data Format
 
-1. **Arrival-first greedy placement** — actual scheduling.
-2. **Priority-first greedy placement** — actual scheduling comparison.
-3. **Merge Sort** — orders vessel indices for both scheduling strategies.
-4. **Binary Search** — searches a sorted index of vessel IDs.
-5. **Interval Partitioning** — computes minimum berths for FIXED immediate-start service windows (planning only).
-6. **0/1 Knapsack DP** — maximizes containers selected under a total crane-HOUR budget (planning only).
-7. **Dijkstra** — shortest paths in a nonnegative directed terminal network.
-8. **Bellman–Ford** — independent cross-check for network shortest paths.
-9. **Kruskal** — undirected network spanning-tree design proxy.
-10. **Edmonds–Karp** — maximum directed terminal flow.
+The application accepts CSV datasets containing vessel information and port capacity.
 
-Algorithms 5–10 do not secretly run inside the berth scheduling engine; they are real, accessible **planning and network features** of the same application. The scheduling engine uses algorithms 1–3. Binary search supports fleet lookup.
-
-## Models and constraints
-
-* A vessel has `id`, `name`, `arrival`, `duration`, `cranes`, `priority`, `containers`, `deadline`.
-* `#berths=N` means **N simultaneously occupied berths** are possible.
-* `#cranes=N` means **N simultaneous shared quay cranes** available across berths.
-* Each vessel occupies **one berth for the entire** `[start, finish)` service interval.
-* Each vessel receives its requested number of cranes **throughout** its service interval; there is **no time-varying crane allocation**.
-* `start >= arrival`, `finish = start + duration`, and `finish <= deadline` when deadline is nonzero.
-* No preemption, crane travel, tide restrictions, berth depth/length constraints, costs, crew shifts or maintenance are modelled.
-* All times are integer **hours**, not actual calendar dates.
-* Both schedulers are **heuristics** that find feasible allocations; they do **not guarantee a globally optimal** number of served vessels or average waiting time.
-
-## Input CSV format
+Example:
 
 ```csv
 #berths=2
@@ -111,55 +158,123 @@ id,name,arrival,duration,cranes,priority,containers,deadline
 103,Blue-Ship,4,3,2,3,200,0
 ```
 
-Create your own file in `data/` and use **menu option 2 → 5** or `--run data/my_fleet.csv`. Menu options 3–7 additionally support editing without touching the CSV manually. Saving your changes is **not automatic**: use option 7. Vessel names must be nonempty and cannot contain commas. Quoted CSV fields are not supported.
+Custom datasets can be loaded through the interactive menu or command line.
 
-## Generated outputs
+```powershell
+.\main.exe --run data\my_fleet.csv
+```
 
-Option 11, `--demo` and `--run` create files under `outputs/`:
+Changes made through the fleet editor must be saved explicitly using the export option.
 
-- `arrival_schedule.csv` — per-ship berth, start, finish and status.
-- `priority_schedule.csv` — equivalent priority-first timetable.
-- `arrival_summary.json` — aggregate metrics, no per-vessel assignments.
-- `priority_summary.json` — priority-first aggregate metrics.
+## Benchmark Results
 
-These filenames are **overwritten** on the next run; save copies before changing datasets. The example outputs are in `examples/`.
+The project includes four scheduling scenarios with different workloads and resource constraints.
 
-## Reference results from the verified build
-
-| Dataset | Ships | Arrival-first served | Priority-first served |
+| Dataset | Vessels | Arrival-First Served | Priority-First Served |
 |---|---:|---:|---:|
 | Normal | 9 | 9 | 9 |
-| Capacity shock | 12 | 7 | 5 |
+| Capacity Shock | 12 | 7 | 5 |
 | Stress | 180 | 84 | 77 |
 | Adversarial | 24 | 15 | 16 |
 
-CPU timings are hardware-dependent. A high number of served ships is not the sole objective: waiting time, throughput and deadlines may trade off.
+These are the reference results recorded for the supplied datasets.
 
-## Folder layout
+The comparison demonstrates that scheduling performance depends on vessel order, resource constraints, and workload characteristics.
+
+A higher number of served vessels does not necessarily imply better overall performance across waiting time, throughput, and deadline satisfaction.
+
+## Generated Reports
+
+The application exports results to the `outputs/` directory.
+
+| File | Description |
+|---|---|
+| `arrival_schedule.csv` | Arrival-first vessel assignments and service times |
+| `priority_schedule.csv` | Priority-first vessel assignments and service times |
+| `arrival_summary.json` | Aggregate arrival-first scheduling metrics |
+| `priority_summary.json` | Aggregate priority-first scheduling metrics |
+
+Output files are overwritten when a new scheduling run generates reports with the same names.
+
+Reference examples are available in the `examples/` directory.
+
+## Project Structure
 
 ```text
-Container_Port_Scheduler_DAA_Focused/
-  include/              public headers (Port, algorithms, terminal network, CLI)
-  src/main.c            ONE program entry point
-  src/core/             CSV, scheduler, reports, interactive fleet, CLI, benchmark, network
-  src/algorithms/       eight focused source files implementing ten components
-  data/                 normal, capacity shock, stress, adversarial, network, custom example
-  tests/test_main.c     known examples, input rules, 100 randomized fleets
-  docs/                 code atlas, menu tutorial, complexity, 8-minute script, viva prep
-  examples/             reference schedule output files
-  scripts/              PowerShell build and Unix verification
-  outputs/              files exported at runtime
-  CMakeLists.txt         cross-platform build system
-  Makefile               Unix make alternative
+container-port-scheduler/
+├── data/                # Input datasets and terminal network
+├── docs/                # Architecture, algorithms, testing documentation
+├── examples/            # Reference scheduling outputs
+├── include/             # Header files
+├── outputs/             # Generated scheduling reports
+├── scripts/             # Build and execution scripts
+├── src/
+│   ├── algorithms/      # Algorithm implementations
+│   ├── core/            # Scheduling, fleet, reporting, and CLI
+│   └── main.c           # Application entry point
+├── tests/               # Automated tests
+├── CMakeLists.txt
+├── Makefile
+├── run.bat
+└── README.md
 ```
 
-## Design limitations (important viva answers)
+## Testing
 
-* A heuristic is **not** an optimal scheduler. Priority-first might serve **fewer** ships than arrival-first; the capacity-shock dataset demonstrates this.
-* Interval partitioning assumes **fixed starts at arrivals** and ignores shared crane constraints; don't present its number as the minimum berths for flexible scheduling.
-* Knapsack makes an **aggregate crane-hour selection**, not a timetable. Selected ships must still undergo feasible berth scheduling separately.
-* Dijkstra requires nonnegative route weights, which the terminal CSV loader enforces; Bellman–Ford supports a wider mathematical class of weights (with `-1` reserved as the missing-edge sentinel).
-* Kruskal reduces directed links to an undirected proxy and uses the minimum directed travel time per connected pair. This is a demonstrative *weight* and **not a monetary infrastructure construction cost**.
-* The `port_save_csv()` export is simple, comma-delimited, and does not implement full RFC 4180 quoting.
+The project includes automated tests covering algorithm behavior, scheduling constraints, input validation, and randomized vessel datasets.
 
-For explanations and exam questions, read `docs/START_HERE.md` and the **separately delivered detailed Word viva guide**.
+Testing resources include:
+
+- Normal operating scenarios
+- Reduced-capacity scenarios
+- High-volume stress workloads
+- Adversarial scheduling inputs
+- Terminal network examples
+- Randomized fleet validation
+
+Run the compiled test executable:
+
+```powershell
+.\port_tests.exe
+```
+
+## Design Limitations
+
+This project is a scheduling simulation and algorithmic analysis tool rather than a production maritime terminal operating system.
+
+Important limitations include:
+
+- Greedy scheduling does not guarantee globally optimal allocation.
+- Crane assignments remain constant throughout vessel service.
+- Interval partitioning assumes fixed service start times and does not account for shared crane constraints.
+- Knapsack performs aggregate crane-hour selection rather than producing a feasible berth timetable.
+- The network spanning-tree model uses an undirected representation of directed terminal connections.
+- Terminal network weights represent travel-related values rather than infrastructure construction costs.
+- The simulation does not model tides, vessel dimensions, crane travel, maintenance, or crew scheduling.
+- CSV input and export use a simplified format without full quoted-field support.
+
+## Future Improvements
+
+Potential extensions include:
+
+- Time-varying crane allocation
+- Multi-objective scheduling optimization
+- Real-world port datasets
+- Vessel dimension and berth compatibility constraints
+- Interactive timetable visualization
+- More advanced scheduling and optimization strategies
+
+## Documentation
+
+Additional technical documentation is available in the `docs/` directory:
+
+- `ARCHITECTURE.md` — System design and component organization
+- `ALGORITHM_COMPLEXITIES.md` — Algorithm complexity analysis
+- `TESTING.md` — Testing methodology
+- `WORKED_EXAMPLE.md` — Example execution and scheduling walkthrough
+
+## Author
+
+**Arjun Sharma**
+
+[GitHub](https://github.com/Arjun591) | [LinkedIn](https://www.linkedin.com/in/arjun-sharma-14ab73377)
