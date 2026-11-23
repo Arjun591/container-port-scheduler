@@ -1,29 +1,253 @@
-# Hand-worked scheduling example
+# Scheduling Example: Arrival-First vs Priority-First
 
-Consider **2 berths**, **3 cranes** and these input ships:
+## Overview
 
-| ID | Arrival | Duration | Cranes | Priority | Deadline |
+This example demonstrates how the Container Port Berth & Crane Scheduling Suite allocates vessels under berth and crane capacity constraints.
+
+It compares two scheduling strategies:
+
+- **Arrival-First Greedy Scheduling:** Processes vessels in order of arrival.
+- **Priority-First Greedy Scheduling:** Processes vessels according to their assigned priority.
+
+Both strategies attempt to find feasible berth assignments while respecting vessel arrival times, service durations, deadlines, and shared crane availability.
+
+## 1. Initial Configuration
+
+The port has the following resources:
+
+| Resource | Available Capacity |
+|---|---:|
+| Berths | 2 |
+| Cranes | 3 |
+| Vessels | 3 |
+
+### Vessel Data
+
+| Vessel | Arrival | Duration | Cranes Required | Priority | Deadline |
 |---|---:|---:|---:|---:|---:|
-| A (1) | 0 | 4 | 2 | 2 | 10 |
-| B (2) | 1 | 3 | 2 | 5 | 8 |
-| C (3) | 2 | 2 | 1 | 3 | 10 |
+| A (ID 1) | 0 | 4 | 2 | 2 | 10 |
+| B (ID 2) | 1 | 3 | 2 | 5 | 8 |
+| C (ID 3) | 2 | 2 | 1 | 3 | 10 |
 
-**Arrival-first (A, B, C):**
+All times are expressed in integer hours.
 
-1. Place A at berth 1 during `[0,4)` using 2 cranes.
-2. B cannot start at hour 1 because 2 (A) + 2 (B) = 4 cranes > 3 available. Place B at berth 1 during `[4,7)`.
-3. C arrives at hour 2. It can fit into the earlier gap `[2,4)` on berth 2 using 1 crane alongside A's 2. The scheduler can fill earlier gaps even when a previous vessel was assigned a later hour.
+Each vessel occupies one berth and retains its requested number of cranes throughout its service interval.
 
-Waiting times: A = `0-0=0`, B = `4-1=3`, C = `2-2=0`, so **average wait = (0+3+0)/3 = 1 hour**.
+## 2. Arrival-First Greedy Scheduling
 
-**Priority-first (B, C, A):**
+**Processing order:** A → B → C
 
-1. Place B `[1,4)` on berth 1 (2 cranes).
-2. Place C `[2,4)` on berth 2 (1 crane), using all 3 cranes during that overlap.
-3. A cannot start at hour 0: its four-hour service would overlap B and C and exceed the crane capacity. Earliest accepted candidate is hour 4. Place A `[4,8)`.
+### Step 1 — Schedule Vessel A
 
-Waiting times: B = `1-1=0`, C = `2-2=0`, A = `4-0=4`, so **average wait = 4/3 = 1.33 hours**. Both strategies serve all ships, but different choices produce different waits and assignments.
+Vessel A arrives at hour 0 and requires:
 
-**Why half-open intervals?** `[0,4)` and `[4,7)` do not overlap, so the same berth can be reused at exactly hour 4. Grouping simultaneous crane event changes ensures the same logic applies to crane counts.
+- 4 hours of service
+- 2 cranes
+- 1 berth
 
-**Why it matters:** greedy order is not a global optimization proof. The result depends on priority and arrival ordering, deadlines and resource pressure.
+The port has sufficient capacity.
+
+**Assignment:** Berth 1, `[0, 4)`
+
+### Step 2 — Schedule Vessel B
+
+Vessel B arrives at hour 1 and requires 2 cranes.
+
+Starting at hour 1 would exceed the available crane capacity:
+
+`2 (A) + 2 (B) = 4 cranes > 3 available`
+
+Vessel A finishes at hour 4, releasing its resources.
+
+**Assignment:** Berth 1, `[4, 7)`
+
+### Step 3 — Schedule Vessel C
+
+Vessel C arrives at hour 2 and requires 1 crane for 2 hours.
+
+Although Vessel B has already been assigned a later service interval, Vessel C can use an earlier available slot.
+
+During `[2, 4)`:
+
+`2 (A) + 1 (C) = 3 cranes`
+
+This satisfies the crane capacity constraint.
+
+**Assignment:** Berth 2, `[2, 4)`
+
+### Final Arrival-First Schedule
+
+| Vessel | Berth | Start | Finish | Waiting Time |
+|---|---:|---:|---:|---:|
+| A | 1 | 0 | 4 | 0 |
+| B | 1 | 4 | 7 | 3 |
+| C | 2 | 2 | 4 | 0 |
+
+### Timeline
+
+```text
+Time       0   1   2   3   4   5   6   7
+           |---|---|---|---|---|---|---|
+
+Berth 1    [       A       ][     B     ]
+Berth 2            [   C   ]
+
+A:         [0,4)  — 2 cranes
+B:                         [4,7) — 2 cranes
+C:                 [2,4)  — 1 crane
+```
+
+### Performance
+
+**Vessels served:** 3 of 3
+
+Waiting times:
+
+- A: `0 - 0 = 0`
+- B: `4 - 1 = 3`
+- C: `2 - 2 = 0`
+
+**Average waiting time:**
+
+`(0 + 3 + 0) / 3 = 1.00 hour`
+
+## 3. Priority-First Greedy Scheduling
+
+**Processing order:** B → C → A
+
+Higher priority values are processed first.
+
+### Step 1 — Schedule Vessel B
+
+Vessel B has the highest priority and arrives at hour 1.
+
+**Assignment:** Berth 1, `[1, 4)`
+
+It uses 2 cranes.
+
+### Step 2 — Schedule Vessel C
+
+Vessel C arrives at hour 2 and requires 1 crane.
+
+During `[2, 4)`:
+
+`2 (B) + 1 (C) = 3 cranes`
+
+Both vessels can operate simultaneously.
+
+**Assignment:** Berth 2, `[2, 4)`
+
+### Step 3 — Schedule Vessel A
+
+Vessel A arrives at hour 0 and requires 2 cranes for 4 hours.
+
+Starting at hour 0 would overlap the already assigned vessels and exceed crane capacity.
+
+The next feasible candidate is hour 4, when B and C have completed service.
+
+**Assignment:** Berth 1, `[4, 8)`
+
+### Final Priority-First Schedule
+
+| Vessel | Berth | Start | Finish | Waiting Time |
+|---|---:|---:|---:|---:|
+| B | 1 | 1 | 4 | 0 |
+| C | 2 | 2 | 4 | 0 |
+| A | 1 | 4 | 8 | 4 |
+
+### Timeline
+
+```text
+Time       0   1   2   3   4   5   6   7   8
+           |---|---|---|---|---|---|---|---|
+
+Berth 1        [     B     ][       A       ]
+Berth 2            [   C   ]
+
+B:             [1,4) — 2 cranes
+C:                 [2,4) — 1 crane
+A:                         [4,8) — 2 cranes
+```
+
+### Performance
+
+**Vessels served:** 3 of 3
+
+Waiting times:
+
+- B: `1 - 1 = 0`
+- C: `2 - 2 = 0`
+- A: `4 - 0 = 4`
+
+**Average waiting time:**
+
+`(0 + 0 + 4) / 3 = 1.33 hours`
+
+## 4. Scheduling Comparison
+
+| Metric | Arrival-First | Priority-First |
+|---|---:|---:|
+| Vessels served | 3 | 3 |
+| Unscheduled vessels | 0 | 0 |
+| Average waiting time | 1.00 hour | 1.33 hours |
+| Final vessel completion | Hour 7 | Hour 8 |
+| Berth capacity respected | Yes | Yes |
+| Crane capacity respected | Yes | Yes |
+| Deadlines respected | Yes | Yes |
+
+In this example, arrival-first scheduling produces a lower average waiting time and an earlier final completion time.
+
+However, this result does not establish that arrival-first scheduling is universally better. Performance depends on vessel characteristics, resource availability, and scheduling order.
+
+## 5. Half-Open Service Intervals
+
+The application represents service intervals using the notation:
+
+`[start, finish)`
+
+The starting time is included, while the finishing time is excluded.
+
+For example:
+
+- Vessel A: `[0, 4)`
+- Vessel B: `[4, 7)`
+
+These intervals do not overlap.
+
+Therefore, a berth or crane released at hour 4 can immediately be reassigned to another vessel starting at hour 4.
+
+The scheduling engine applies consistent boundary handling when checking berth occupancy and simultaneous crane demand.
+
+## 6. Key Observations
+
+### Scheduling Order Affects Results
+
+Different vessel processing orders can produce different berth assignments, service start times, and waiting times.
+
+### Shared Resources Create Dependencies
+
+Even when a berth is available, a vessel may be delayed because insufficient cranes are available.
+
+### Earlier Gaps Can Be Utilized
+
+The scheduler can assign a vessel to an earlier feasible time slot even when another vessel has already been scheduled for a later interval.
+
+### Feasibility Does Not Guarantee Optimality
+
+Both greedy strategies produce valid schedules in this example.
+
+Neither strategy guarantees a globally optimal timetable across all possible vessel combinations.
+
+## 7. Conclusion
+
+This example illustrates how vessel arrival times, priorities, service durations, and shared crane requirements interact during berth scheduling.
+
+Both strategies successfully schedule all three vessels, but the arrival-first approach achieves a lower average waiting time for this particular dataset.
+
+The comparison demonstrates the importance of evaluating multiple scheduling strategies rather than assuming that a single greedy ordering will always produce the best result.
+
+For further implementation details, see:
+
+- [System Architecture](ARCHITECTURE.md)
+- [Algorithm Complexities](ALGORITHM_COMPLEXITIES.md)
+- [Testing and Validation](TESTING.md)
